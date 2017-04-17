@@ -69,21 +69,25 @@ class Moder
     {
         $db = Database::getInstance();
 
+        //проверяем все не проверенные объявления
         foreach ($this->data as $advert) {
             $status = Advert::STATUS_AM_OK;
             $ruleClass = null;
 
             foreach ($this->rules as $rule) {
-                //проверка исключений и правила
-                if ($this->applySourceRule($advert['source'], $rule) && !$rule->check($advert)) {
-                    $status = Advert::STATUS_AM_FAILED;
-                    $ruleClass = get_class($rule);
-                    break;
+                //проверка исключений
+                if ($this->applySourceRule($advert['source'], $rule)) {
+                    //проверка правила
+                    if (!$rule->check($advert)) {
+                        $status = Advert::STATUS_AM_FAILED;
+                        $ruleClass = get_class($rule);
+                        break;
+                    }
                 }
             }
 
             //обновляем статус
-            $db->query("UPDATE advert SET status = $status");
+            $db->query("UPDATE advert SET status = $status WHERE id = " . $advert['id']);
             //записываем историю
             $this->writeHistory($advert, $status, $ruleClass);
         }
@@ -94,11 +98,13 @@ class Moder
      */
     private function applySourceRule($source, $rule)
     {
-        if (in_array(get_class($rule), $this->sourceRules[$source])) {
-            return false;
-        } else {
-            return true;
+        if (is_array($this->sourceRules[$source])) {
+            if (in_array(get_class($rule), $this->sourceRules[$source])) {
+                return false;
+            }
         }
+
+        return true;
     }
 
     /**

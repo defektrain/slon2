@@ -30,7 +30,7 @@ if ($_REQUEST['moderate']) {
     //добавляем динамические исключения Источник<->Критерий
     $moder->loadSourceRules([
         'Агентство 1' => [
-            'rules\Blacklist',
+            'rules\Suspicious',
             'rules\BadDesc',
         ],
     ]);
